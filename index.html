@@ -10,7 +10,7 @@
   <!-- Fonte Lora -->
   <link href="https://fonts.googleapis.com/css2?family=Lora&display=swap" rel="stylesheet">
   <style>
-    /* Reset */
+    /* Reset básico */
     * {
       margin: 0;
       padding: 0;
@@ -19,24 +19,24 @@
     html, body {
       height: 100%;
       font-family: 'Lora', serif;
-      /* Imagem de fundo cobrindo tudo */
-      background: url('imagem-fundo.jpg') no-repeat center center / cover;
       overflow: hidden;
+      /* imagem de fundo responsiva */
+      background: url('imagem-fundo.jpg') no-repeat center center;
+      background-size: cover;
       display: flex;
       justify-content: center;
       align-items: center;
     }
 
-    /* Container da imagem vazada */
+    /* Imagem vazada, agora acima dos botões */
     .overlay-image {
       position: fixed;
-      top: 50%;
+      top: 35%;         /* mais para cima */
       left: 50%;
       width: 50vw;
-      height: auto;
-      max-height: 50vh;
-      transform: translate(-50%, -50%);
-      z-index: 0;
+      max-width: 600px;
+      transform: translate(-50%, -35%);
+      z-index: 2;       /* acima dos botões */
     }
     .overlay-image img {
       width: 100%;
@@ -47,14 +47,14 @@
     /* Container dos botões */
     .buttons-container {
       position: fixed;
-      top: 50%;
+      top: 60%;         /* empurra para baixo para dar espaço à imagem */
       left: 50%;
       transform: translate(-50%, 0);
       display: flex;
       flex-direction: column;
       align-items: flex-start;
       gap: 10px;
-      z-index: 1;
+      z-index: 1;       /* abaixo da imagem */
       background-color: rgba(0, 0, 0, 0.6);
       padding: 20px;
       border-radius: 16px;
@@ -83,26 +83,45 @@
       font-size: 1.2em;
     }
 
-    /* Responsividade para mobile */
+    /* Responsividade */
     @media (max-width: 800px) {
       .overlay-image {
+        top: 30%;
         width: 80vw;
-        max-height: 40vh;
+        transform: translate(-50%, -30%);
       }
       .buttons-container {
-        top: calc(100vh - 350px);
+        top: 65%;
+        width: 90vw;
+        left: 50%;
+        transform: translate(-50%, 0);
+      }
+    }
+    @media (max-width: 480px) {
+      .overlay-image {
+        top: 25%;
+        width: 90vw;
+        transform: translate(-50%, -25%);
+      }
+      .buttons-container {
+        top: 70%;
+        padding: 15px;
+      }
+      .button {
+        font-size: 0.9em;
+        padding: 8px 16px;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Imagem “vazada” sobre o fundo -->
+  <!-- Imagem vazada sobre o fundo -->
   <div class="overlay-image">
-    <img src="imagem-vazada.png" alt="Animação vazada Burn Produtos Fitness">
+    <img src="imagem-vazada.png" alt="Overlay Vazado">
   </div>
 
-  <!-- Botões sobrepostos -->
+  <!-- Botões -->
   <div class="buttons-container">
     <a href="catalogo.html" class="button">
       <i class="fas fa-store"></i> Conheça nossa loja
