@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Catálogo Dinâmico</title>
+  <!-- Font Awesome -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" />
+  <!-- Fonte Lora -->
+  <link href="https://fonts.googleapis.com/css2?family=Lora&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box }
+    body {
+      font-family:'Lora', serif;
+      background:#fff; color:#000;
+      padding:20px;
+    }
+    h1 {
+      text-align:center;
+      margin-bottom:30px;
+      font-size:2em;
+    }
+    #floatingSacola {
+      position:fixed; top:20px; right:20px;
+      background:#007BFF; color:#fff;
+      border:none; border-radius:8px;
+      padding:10px 15px; font-size:1em;
+      display:flex; align-items:center; gap:8px;
+      cursor:pointer; z-index:1000;
+      box-shadow:0 2px 4px rgba(0,0,0,0.3);
+      transition:background 0.3s;
+    }
+    #floatingSacola:hover { background:#0056b3 }
+    .family-section { margin-bottom:40px; }
+    .family-title {
+      font-size:1.5em; font-weight:bold; margin-bottom:15px;
+    }
+    .family-content {
+      display:flex; gap:20px; overflow-x:auto; align-items:flex-start;
+    }
+    .family-image {
+      flex-shrink:0; width:200px; border-radius:8px;
+    }
+    table { width:100%; border-collapse:collapse; }
+    th, td {
+      padding:8px; text-align:left; border-bottom:1px solid #ddd;
+      vertical-align:top;
+    }
+    input.product-qty {
+      width:60px; padding:4px; text-align:center;
+    }
+    button.add-to-cart {
+      background:#007BFF; border:none; color:#fff;
+      padding:6px 10px; border-radius:4px;
+      cursor:pointer; transition:background 0.3s;
+    }
+    button.add-to-cart:hover { background:#0056b3 }
+    /* quando adicionar ao carrinho, ícone e fundo ficam verdes */
+    button.add-to-cart.in-cart {
+      background-color: #28a745 !important;
+    }
+    button.add-to-cart.in-cart i {
+      color: #fff !important;
+    }
+    /* linha inativa semitransparente */
+    tr.inactive { opacity:0.5; }
+    /* aviso "Produto indisponível" em cinza */
+    tr.inactive small {
+      display:block; color:#666; font-size:0.8em;
+    }
+    /* desabilita interação nos inativos */
+    tr.inactive input.product-qty,
+    tr.inactive button.add-to-cart {
+      pointer-events:none;
+    }
+    @media(max-width:600px) {
+      .family-content { flex-direction:column; }
+      .family-image { width:100%; max-width:300px; }
+      table { font-size:0.9em; }
+      th, td { padding:6px; }
+      input.product-qty { width:50px; }
+      button.add-to-cart { padding:5px 8px; }
+    }
+    @media(max-width:480px) {
+      h1 { font-size:1.5em; }
+      #floatingSacola { padding:8px 12px; font-size:0.9em; }
+      .family-title { font-size:1.3em; }
+    }
+  </style>
+</head>
+<body>
+
+  <button id="floatingSacola" onclick="location='sacola.html'">
+    <i class="fas fa-shopping-bag"></i> Sacola
+  </button>
+
+  <h1>Catálogo Dinâmico</h1>
+  <div id="catalog"></div>
+
+  <!-- PapaParse para ler CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script>
+    // 1) Família + pesos (sem preços aqui)
+    const families = [
+      { title:'ANILHA SPORT PINTADA',                  image:'images/ANILHA_SPORT_PINTADA.jpg',            weights:[1,2,3,4,5,10,15,20,25] },
+      { title:'ANILHA SPORT EMBORRACHADA',             image:'images/ANILHA_SPORT_EMBORRACHADA.jpg',       weights:[1,2,3,4,5,10,15,20,25] },
+      { title:'ANILHA VAZADA EMBORRACHADA',            image:'images/ANILHA_VAZADA_EMBORRACHADA.jpg',      weights:[1,2,3,4,5,10,15,20,25] },
+      { title:'ANILHA VAZADA PINTADA',                 image:'images/ANILHA_VAZADA_PINTADA.jpg',           weights:[1,2,3,4,5,10,15,20,25] },
+      { title:'HALTER BOLA EMBORRACHADO',              image:'images/HALTER_BOLA_EMBORRACHADO.jpg',        weights:[1,2,3,4,5,6,7,8,9,10] },
+      { title:'HALTER BOLA PINTADO',                   image:'images/HALTER_BOLA_PINTADO.jpg',             weights:[1,2,3,4,5,6,7,8,9,10] },
+      { title:'HALTER SEXTAVADO PINTADO',              image:'images/HALTER_SEXTAVADO_PINTADO.jpg',        weights:[1,2,3,4,5,6,7,8,9,10] },
+      { title:'HALTER SEXTAVADO EMBORRACHADO',         image:'images/HALTER_SEXTAVADO_EMBORRACHADO.jpg',   weights:[1,2,3,4,5,6,7,8,9,10] },
+      { title:'KETTLEBELL PINTADO',                    image:'images/KETTLEBELL_PINTADO.jpg',              weights:[4,6,8,10,12,14,16,18,20,22,24] },
+      { title:'KETTLEBELL EMBORRACHADO',               image:'images/KETTLEBELL_EMBORRACHADO.jpg',         weights:[4,6,8,10,12,14,16,18,20,22,24] },
+      { title:'KETTLEBELL EMBORRACHADO PEGADA PINTADA',image:'images/KETTLEBELL_EMBORRACHADO_PINTADA.jpg', weights:[4,6,8,10,12,14,16,18,20,22,24] },
+      { title:'TIJOLINHO',                         image:'images/TIJOLINHO_5KG.jpg',                   weights:[5] }
+    ];
+
+    // 2) CSV com colunas Produto,Preco,Status
+    const CSV_URL =
+      'https://docs.google.com/spreadsheets/d/e/2PACX-1vQZNbgexgACZji8qW1sjmUDQuTWyw9vTNrEXqdViEzi7OrKm7HoTqc2VSGS5kCdBFxbk-yw4riDo7ya/pub?gid=0&single=true&output=csv';
+
+    const priceMap  = {};
+    const statusMap = {};
+
+    // 3) Parse do CSV (normaliza vírgula → ponto)
+    Papa.parse(CSV_URL, {
+      download: true, header: true,
+      complete: res => {
+        res.data.forEach(r => {
+          const n = r.Produto && r.Produto.trim();
+          if (!n) return;
+          const p = String(r.Preco).trim().replace(',', '.');
+          priceMap[n]  = parseFloat(p) || 0;
+          statusMap[n] = (r.Status||'').trim().toLowerCase();
+        });
+        buildCatalog();
+      },
+      error: err => {
+        console.error('CSV error', err);
+        alert('Falha ao carregar o catálogo.');
+      }
+    });
+
+    // 4) Gera o HTML
+    function buildCatalog() {
+      const c = document.getElementById('catalog');
+      c.innerHTML = '';
+      families.forEach(f => {
+        const sec = document.createElement('div');
+        sec.className = 'family-section';
+        let html = `<div class="family-title">${f.title}</div>
+                    <div class="family-content">
+                      <img class="family-image" src="${f.image}" alt="${f.title}">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Produto</th>
+                            <th>Preço Unitário</th>
+                            <th>Qtd.</th>
+                            <th></th>
+                          </tr>
+                        </thead><tbody>`;
+        f.weights.forEach(w => {
+          const name     = `${f.title} ${w} KG`;
+          const price    = priceMap[name]  || 0;
+          const inactive = statusMap[name] !== 'ativo';
+          html += `<tr class="${inactive?'inactive':''}">
+            <td>
+              ${name}
+              ${inactive?'<small>Produto indisponível</small>':''}
+            </td>
+            <td>R$ ${price.toFixed(2)}</td>
+            <td>
+              <input type="number" class="product-qty" min="0" value="0"
+                     ${inactive?'disabled':''}>
+            </td>
+            <td>
+              <button class="add-to-cart"
+                      onclick="toggleCart(this,'${name}')"
+                      ${inactive?'disabled':''}>
+                <i class="fas fa-shopping-bag"></i>
+              </button>
+            </td>
+          </tr>`;
+        });
+        html += `</tbody></table></div>`;
+        sec.innerHTML = html;
+        c.appendChild(sec);
+      });
+    }
+
+    // 5) Adiciona ao carrinho (só armazena nome+quantidade)
+    function toggleCart(btn, name) {
+      const row = btn.closest('tr');
+      const qty = parseInt(row.querySelector('.product-qty').value)||0;
+      if (!qty) { alert('Selecione uma quantidade'); return; }
+      let cart = JSON.parse(localStorage.getItem('cart'))||[];
+      const i = cart.findIndex(x=>x.name===name);
+      if (i > -1) cart[i].qty += qty;
+      else         cart.push({ name, qty });
+      localStorage.setItem('cart', JSON.stringify(cart));
+      btn.classList.add('in-cart');
+    }
+  </script>
+</body>
+</html>
